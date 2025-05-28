@@ -51,5 +51,4 @@ class HybridDeepFakeDetector(nn.Module):
         
         final_features = lstm_out[:, -1, :]
         output = self.classifier(final_features)
-        
         return output
