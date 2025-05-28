@@ -1,50 +1,36 @@
 import torch
 import torch.nn as nn
+import torchvision.models as models
 
-class CNNFeatureExtractor(nn.Module):
+class ResNetBackbone(nn.Module):
     """
-    CNN for extracting features
+    Pretrained ResNet-18
     """
-    def __init__(self, input_channels=3, feature_dim=512):
-        super(CNNFeatureExtractor, self).__init__()
+    def __init__(self, feature_dim=512, freeze_layers=True):
+        super().__init__()
+        resnet = models.resnet18(pretrained=True)
         
-        self.features = nn.Sequential(
-
-            nn.Conv2d(input_channels, 64, kernel_size=3, padding=1),
-            nn.BatchNorm2d(64),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2, 2),
-
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2, 2),
-            
-            nn.Conv2d(128, 256, kernel_size=3, padding=1),
-            nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2, 2),
-            
-            nn.Conv2d(256, 512, kernel_size=3, padding=1),
-            nn.BatchNorm2d(512),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(2, 2),
-        )
         
-        # adaptive pooling 
-        self.adaptive_pool = nn.AdaptiveAvgPool2d((4, 4))
+        if freeze_layers:
+            for name, param in resnet.named_parameters():
+                if not name.startswith("layer4") and not name.startswith("fc"):
+                    param.requires_grad = False
         
-        #fully connected layer
-        self.fc = nn.Sequential(
-            nn.Linear(512 * 4 * 4, feature_dim),
+        # Remove the final classification layer
+        # resnet.fc is nn.Linear(in_features=512, out_features=1000)
+        in_feats = resnet.fc.in_features
+        resnet.fc = nn.Identity()
+        
+        self.backbone = resnet
+        #projecting to desired feature dimension
+        self.projector = nn.Sequential(
+            nn.Linear(in_feats, feature_dim),
             nn.ReLU(inplace=True),
-            nn.Dropout(0.5)
+            nn.Dropout(0.5),
         )
     
     def forward(self, x):
-        # x shape: (batch_size, channels, height, width)
-        features = self.features(x)
-        features = self.adaptive_pool(features)
-        features = features.view(features.size(0), -1)
-        features = self.fc(features)
-        return features
+        # x: (batch_size, 3, H, W)
+        features = self.backbone(x)               
+        out = self.projector(features)       
+        return out
