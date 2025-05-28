@@ -1,0 +1,28 @@
+{
+  "overall_metrics": {
+    "accuracy": 0.876898481215028,
+    "precision": 0.8768792995137806,
+    "recall": 0.876898481215028,
+    "f1_score": 0.87686867248971,
+    "auc": 0.9383503270685744
+  },
+  "per_class_metrics": {
+    "real": {
+      "precision": 0.8787878787878788,
+      "recall": 0.8868501529051988,
+      "f1_score": 0.882800608828006
+    },
+    "fake": {
+      "precision": 0.8747884940778342,
+      "recall": 0.8659966499162479,
+      "f1_score": 0.8703703703703703
+    }
+  },
+  "dataset_info": {
+    "total_samples": 2502,
+    "class_distribution": {
+      "real": 1308,
+      "fake": 1194
+    }
+  }
+}

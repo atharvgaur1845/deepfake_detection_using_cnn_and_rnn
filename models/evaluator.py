@@ -12,15 +12,6 @@ from tqdm import tqdm
 
 class DeepfakeEvaluator:
     def __init__(self, model_path, test_loader, device, output_dir="evaluation_results"):
-        """
-        Initialize evaluator with model path instead of model object
-        
-        Args:
-            model_path: Path to saved model (.pth file)
-            test_loader: DataLoader for test data
-            device: torch device
-            output_dir: Directory to save evaluation results
-        """
         self.device = device
         self.test_loader = test_loader
         self.output_dir = Path(output_dir)
@@ -30,9 +21,13 @@ class DeepfakeEvaluator:
         self.model = self.load_model(model_path)
         
     def load_model(self, model_path):
-        """Load model from .pth file"""
-        # Import model here to avoid circular imports
-        from .hybrid_model import HybridDeepFakeDetector
+        """Load model from .pth file with fixed imports"""
+        
+        # Fix import path - add project root to sys.path
+        project_root = Path(__file__).parent.parent.resolve()
+        sys.path.insert(0, str(project_root))
+        
+        from hybrid_model import HybridDeepFakeDetector
         
         print(f"Loading model from: {model_path}")
         
@@ -67,7 +62,6 @@ class DeepfakeEvaluator:
         print(f"Trainable parameters: {trainable_params:,}")
         
         return model
-    
     def evaluate(self):
         """Run comprehensive evaluation"""
         print("Starting model evaluation...")
@@ -133,14 +127,6 @@ class DeepfakeEvaluator:
         else:
             auc = 0.0
         
-        # Calculate per-class accuracy
-        class_accuracies = {}
-        for class_idx in [0, 1]:
-            class_mask = labels == class_idx
-            if np.sum(class_mask) > 0:
-                class_acc = accuracy_score(labels[class_mask], predictions[class_mask])
-                class_accuracies[f'class_{class_idx}'] = float(class_acc)
-        
         metrics = {
             'overall_metrics': {
                 'accuracy': float(accuracy),
@@ -153,14 +139,12 @@ class DeepfakeEvaluator:
                 'real': {
                     'precision': float(precision_per_class[0]),
                     'recall': float(recall_per_class[0]),
-                    'f1_score': float(f1_per_class[0]),
-                    'accuracy': class_accuracies.get('class_0', 0.0)
+                    'f1_score': float(f1_per_class[0])
                 },
                 'fake': {
                     'precision': float(precision_per_class[1]),
                     'recall': float(recall_per_class[1]),
-                    'f1_score': float(f1_per_class[1]),
-                    'accuracy': class_accuracies.get('class_1', 0.0)
+                    'f1_score': float(f1_per_class[1])
                 }
             },
             'dataset_info': {
@@ -168,8 +152,7 @@ class DeepfakeEvaluator:
                 'class_distribution': {
                     'real': int(np.sum(labels == 0)),
                     'fake': int(np.sum(labels == 1))
-                },
-                'class_balance': float(np.sum(labels == 0) / len(labels))
+                }
             }
         }
         
@@ -213,19 +196,10 @@ class DeepfakeEvaluator:
         plt.figure(figsize=(10, 8))
         sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', 
                    xticklabels=['Real', 'Fake'], 
-                   yticklabels=['Real', 'Fake'], cbar_kws={'label': 'Count'})
-        plt.title('Confusion Matrix', fontsize=16)
-        plt.xlabel('Predicted Label', fontsize=14)
-        plt.ylabel('True Label', fontsize=14)
-        
-        # Add percentage annotations
-        total = cm.sum()
-        for i in range(len(cm)):
-            for j in range(len(cm[i])):
-                percentage = cm[i][j] / total * 100
-                plt.text(j + 0.5, i + 0.7, f'({percentage:.1f}%)', 
-                        ha='center', va='center', fontsize=10, color='red')
-        
+                   yticklabels=['Real', 'Fake'])
+        plt.title('Confusion Matrix')
+        plt.xlabel('Predicted Label')
+        plt.ylabel('True Label')
         plt.tight_layout()
         plt.savefig(self.output_dir / "confusion_matrix.png", dpi=300, bbox_inches='tight')
         plt.close()
@@ -239,15 +213,14 @@ class DeepfakeEvaluator:
             plt.figure(figsize=(10, 8))
             plt.plot(fpr, tpr, color='darkorange', lw=3, 
                     label=f'ROC curve (AUC = {auc:.4f})')
-            plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--', 
-                    label='Random Classifier')
+            plt.plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--')
             plt.xlim([0.0, 1.0])
             plt.ylim([0.0, 1.05])
-            plt.xlabel('False Positive Rate', fontsize=14)
-            plt.ylabel('True Positive Rate', fontsize=14)
-            plt.title('Receiver Operating Characteristic (ROC) Curve', fontsize=16)
-            plt.legend(loc="lower right", fontsize=12)
-            plt.grid(True, alpha=0.3)
+            plt.xlabel('False Positive Rate')
+            plt.ylabel('True Positive Rate')
+            plt.title('Receiver Operating Characteristic (ROC) Curve')
+            plt.legend(loc="lower right")
+            plt.grid(True)
             plt.tight_layout()
             plt.savefig(self.output_dir / "roc_curve.png", dpi=300, bbox_inches='tight')
             plt.close()
@@ -258,14 +231,11 @@ class DeepfakeEvaluator:
             precision, recall, _ = precision_recall_curve(labels, probabilities[:, 1])
             
             plt.figure(figsize=(10, 8))
-            plt.plot(recall, precision, color='blue', lw=3, label='Precision-Recall Curve')
-            plt.xlabel('Recall', fontsize=14)
-            plt.ylabel('Precision', fontsize=14)
-            plt.title('Precision-Recall Curve', fontsize=16)
-            plt.legend(fontsize=12)
-            plt.grid(True, alpha=0.3)
-            plt.xlim([0.0, 1.0])
-            plt.ylim([0.0, 1.05])
+            plt.plot(recall, precision, color='blue', lw=3)
+            plt.xlabel('Recall')
+            plt.ylabel('Precision')
+            plt.title('Precision-Recall Curve')
+            plt.grid(True)
             plt.tight_layout()
             plt.savefig(self.output_dir / "precision_recall_curve.png", dpi=300, bbox_inches='tight')
             plt.close()
@@ -282,8 +252,8 @@ def main():
     
     args = parser.parse_args()
     
-    # Add project root to path
-    project_root = Path(__file__).parent.parent
+    # Add project root to path (FIXED)
+    project_root = Path(__file__).parent.parent.resolve()
     sys.path.insert(0, str(project_root))
     
     # Setup device
@@ -331,16 +301,6 @@ def main():
     print(f"Total Samples: {dataset_info['total_samples']}")
     print(f"Real Samples: {dataset_info['class_distribution']['real']}")
     print(f"Fake Samples: {dataset_info['class_distribution']['fake']}")
-    print(f"Class Balance: {dataset_info['class_balance']:.2%} real")
-    
-    print(f"\nPer-Class Performance:")
-    real_metrics = metrics['per_class_metrics']['real']
-    fake_metrics = metrics['per_class_metrics']['fake']
-    
-    print(f"Real Class - Precision: {real_metrics['precision']:.4f}, "
-          f"Recall: {real_metrics['recall']:.4f}, F1: {real_metrics['f1_score']:.4f}")
-    print(f"Fake Class - Precision: {fake_metrics['precision']:.4f}, "
-          f"Recall: {fake_metrics['recall']:.4f}, F1: {fake_metrics['f1_score']:.4f}")
     
     print(f"\nResults saved to: {args.output_dir}")
 
