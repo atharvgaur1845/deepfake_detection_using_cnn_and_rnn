@@ -10,7 +10,7 @@ class HybridDeepFakeDetector(nn.Module):
                  lstm_hidden_dim=256, num_classes=2):
         super(HybridDeepFakeDetector, self).__init__()
         #CNN
-        self.cnn = CNNFeatureExtractor(input_channels, cnn_feature_dim)
+        self.cnn = ResNetBackbone(input_channels, cnn_feature_dim)
         
         # LSTM
         self.lstm = nn.LSTM(
