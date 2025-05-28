@@ -3,34 +3,34 @@ import torch.nn as nn
 import torchvision.models as models
 
 class ResNetBackbone(nn.Module):
-    """
-    Pretrained ResNet-18
-    """
     def __init__(self, feature_dim=512, freeze_layers=True):
-        super().__init__()
-        resnet = models.resnet18(pretrained=True)
+        super(ResNetBackbone, self).__init__()
         
-        
+        # Load pretrained ResNet-18
+        resnet = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
+
         if freeze_layers:
             for name, param in resnet.named_parameters():
                 if not name.startswith("layer4") and not name.startswith("fc"):
                     param.requires_grad = False
         
-        # Remove the final classification layer
-        # resnet.fc is nn.Linear(in_features=512, out_features=1000)
-        in_feats = resnet.fc.in_features
-        resnet.fc = nn.Identity()
+        modules = list(resnet.children())[:-1]  # Remove last FC layer
+        self.backbone = nn.Sequential(*modules)
         
-        self.backbone = resnet
-        #projecting to desired feature dimension
+        # Add adaptive pooling
+        self.adaptive_pool = nn.AdaptiveAvgPool2d((1, 1))
+        
+        # Project to desired feature dimension
         self.projector = nn.Sequential(
-            nn.Linear(in_feats, feature_dim),
+            nn.Linear(512, feature_dim),  # ResNet18 outputs 512 features
             nn.ReLU(inplace=True),
-            nn.Dropout(0.5),
+            nn.Dropout(0.3)
         )
     
     def forward(self, x):
         # x: (batch_size, 3, H, W)
-        features = self.backbone(x)               
-        out = self.projector(features)       
-        return out
+        features = self.backbone(x)           # (batch_size, 512, H', W')
+        features = self.adaptive_pool(features)  # (batch_size, 512, 1, 1)
+        features = features.view(features.size(0), -1)  # (batch_size, 512)
+        features = self.projector(features)   # (batch_size, feature_dim)
+        return features
