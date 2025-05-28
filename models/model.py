@@ -4,9 +4,9 @@ import argparse
 import sys
 sys.path.append(str(Path(__file__).parent))
 
-from data_prepare.dataset_loader import create_data_loaders
-from models.hybrid_model import HybridDeepFakeDetector
-from models.trainer import DeepfakeTrainer
+from dataset_loader import create_data_loaders
+from hybrid_model import HybridDeepFakeDetector
+from trainer import DeepfakeTrainer
 
 def main():
     parser = argparse.ArgumentParser(description="Train deepfake detection model")

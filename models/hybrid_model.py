@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from .cnn_feature_extractor import CNNFeatureExtractor
+from cnn_feature_extractor import CNNFeatureExtractor
 
 class HybridDeepFakeDetector(nn.Module):
     """
