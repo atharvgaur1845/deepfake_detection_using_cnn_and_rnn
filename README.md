@@ -4,7 +4,7 @@
 This project develops a hybrid CNN-LSTM deepfake detection system that analyzes spatial and temporal features in video sequences. The system combines ResNet-18 for spatial feature extraction with bidirectional LSTM for temporal pattern recognition, achieving 87.69% accuracy on test data. Key learnings include the critical importance of temporal modeling and robust preprocessing pipelines for effective deepfake detection.
 
 ## 2. Thought Process
-After reviewing literature on deepfake detection methods including XceptionNet (91.5% accuracy) and GenConViT (93.8%), we selected a hybrid approach balancing performance and computational efficiency. The decision was based on:
+After reviewing literature on deepfake detection methods including XceptionNet (91.5% accuracy) and GenConViT (93.8%), I selected a hybrid approach balancing performance and computational efficiency. The decision was based on:
 - Temporal inconsistencies being key deepfake indicators
 - CNN-LSTM combinations showing 97%+ accuracy in studies
 - Memory constraints favoring hybrid over 3D CNN approaches
@@ -12,10 +12,9 @@ After reviewing literature on deepfake detection methods including XceptionNet (
 
 ## 3. Blockers
 Major challenges encountered:
-- **GPU Memory Limitations**: CUDA OOM errors requiring batch size reduction to 2 and sequence length optimization
+- **GPU Memory Limitations**: CUDA out of memory errors requiring batch size reduction to 2 and sequence length optimization
 - **Training Instability**: Initial accuracy stuck at 52% due to class imbalance and inappropriate learning rates
 - **Data Pipeline Complexity**: Face detection failures and import path issues during modular development
-- **Class Imbalance**: Model initially predicting only majority class, requiring weighted loss implementation
 
 ## 4. Approach
 
@@ -44,8 +43,6 @@ Video Sequence (16 frames) → ResNet-18 Backbone → Feature Vectors (512D)
 | XceptionNet | CNN only | 91.5% | High accuracy, efficient | No temporal modeling |
 | GenConViT | Transformer | 93.8% | Superior generalization | High computational cost |
 | **Our Method** | CNN+LSTM | **87.7%** | Temporal awareness, balanced | Memory constraints |
-
-Our approach demonstrates competitive performance with explicit temporal modeling capabilities, particularly effective for detecting frame-to-frame inconsistencies characteristic of deepfake videos.
 
 ## 6. Results
 
@@ -85,6 +82,3 @@ Our approach demonstrates competitive performance with explicit temporal modelin
 - Total Parameters: 14,397,893
 - Training Time: ~25 minutes/epoch (batch_size=2)
 - Memory Usage: ~6.8GB GPU memory
-
-The project successfully demonstrates effective deepfake detection using temporal analysis, achieving competitive accuracy while maintaining computational feasibility.
-
