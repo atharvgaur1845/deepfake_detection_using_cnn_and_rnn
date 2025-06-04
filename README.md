@@ -82,3 +82,4 @@ Video Sequence (16 frames) → ResNet-18 Backbone → Feature Vectors (512D)
 - Total Parameters: 14,397,893
 - Training Time: ~25 minutes/epoch (batch_size=2)
 - Memory Usage: ~6.8GB GPU memory
+DataSet used- https://drive.google.com/file/d/1DKOkBIAy7HyP91N34mj1E0FFu7sqdKR_/view
